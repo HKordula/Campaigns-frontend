@@ -68,7 +68,7 @@ const CampaignList = () => {
                     {currentCampaigns.map(campaign => (
                         <tr key={campaign.id}>
                             <td className="text-center">{campaign.campaignName}</td>
-                            <td className="text-center">{campaign.keywords}</td>
+                            <td className="text-center">{campaign.keywords?.join(", ")}</td>
                             <td className="text-center">{campaign.bidAmount}</td>
                             <td className="text-center">{campaign.campaignFund}</td>
                             <td className="text-center">{campaign.status}</td>

@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { addCampaign, getCampaign, updateCampaign } from "../services/CampaignService";
+import Select from "react-select";
+import { getPredefinedKeywords, addCampaign, getCampaign, updateCampaign } from "../services/CampaignService";
 import { useNavigate, useParams } from "react-router-dom";
+
 
 const CampaignComponent = () => {
     const [campaignName, setCampaignName] = useState("");
-    const [keywords, setKeywords] = useState("");
+    const [keywords, setKeywords] = useState([]);
+    const [availableKeywords, setAvailableKeywords] = useState([]);
     const [bidAmount, setBidAmount] = useState(1);
     const [campaignFund, setCampaignFund] = useState(100);
     const [status, setStatus] = useState("");
@@ -25,18 +28,22 @@ const CampaignComponent = () => {
     const navigator = useNavigate();
 
     useEffect(() => {
+        getPredefinedKeywords()
+            .then(response => {
+                setAvailableKeywords(response.data.map(keyword => ({ value: keyword, label: keyword })));
+            })
+            .catch(error => console.error("Error fetching keywords:", error));
+
         if (id) {
             getCampaign(id).then(response => {
                 setCampaignName(response.data.campaignName);
-                setKeywords(response.data.keywords);
+                setKeywords(response.data.keywords.map(k => ({ value: k, label: k }))); // Convert for react-select
                 setBidAmount(response.data.bidAmount);
                 setCampaignFund(response.data.campaignFund);
                 setStatus(response.data.status);
                 setTown(response.data.town);
                 setRadius(response.data.radius);
-            }).catch(error => {
-                console.error(error);
-            });
+            }).catch(error => console.error("Error fetching campaign:", error));
         }
     }, [id]);
 
@@ -45,7 +52,7 @@ const CampaignComponent = () => {
 
         if (validateForm()) {
 
-            const campaign = { campaignName, keywords, bidAmount, campaignFund, status, town, radius };
+            const campaign = { campaignName, keywords: keywords.map(k => k.value), bidAmount, campaignFund, status, town, radius };
             console.log(campaign);
 
             if(id) {
@@ -78,10 +85,10 @@ const CampaignComponent = () => {
             valid = false;
         }
 
-        if (keywords.trim()) {
+        if (keywords.length > 0) {
             errorsCopy.keywords = "";
         } else {
-            errorsCopy.keywords = "Keywords are required";
+            errorsCopy.keywords = "At least one keyword is required";
             valid = false;
         }
 
@@ -156,15 +163,15 @@ const CampaignComponent = () => {
                             </div>
                             <div className="form-group mb-2">
                                 <label>Keywords:</label>
-                                <input
-                                    type="text"
-                                    placeholder="Enter Keywords"
-                                    name="keywords"
+                                <Select
+                                    options={availableKeywords}
+                                    isMulti
                                     value={keywords}
-                                    className={`form-control ${error.keywords ? 'is-invalid' : ''}`}
-                                    onChange={e => setKeywords(e.target.value)}
+                                    onChange={setKeywords} 
+                                    className="basic-multi-select"
+                                    classNamePrefix="select"
                                 />
-                                {error.keywords && <div className="invalid-feedback">{error.keywords}</div>}
+                                {error.keywords && <div className="text-danger">{error.keywords}</div>}
                             </div>
                             <div className="form-group mb-2">
                                 <label>Bid Amount: (in zł)</label>
